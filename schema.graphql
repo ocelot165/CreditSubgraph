@@ -1,0 +1,277 @@
+type LendingFactory @entity {
+  # factory address
+  id: ID!
+
+  # pair info
+  pairCount: BigInt!
+  pairs: [LendingPair!]! @derivedFrom(field: "factory")
+}
+
+type LendingPair @entity {
+  id: ID!
+  name: String!
+  # asset token
+  asset: Token!
+  # collateral token
+  collateral: Token!
+  # lending factory
+  factory: LendingFactory!
+  # # maturity pools
+  pools: [LendingPairPool!]! @derivedFrom(field: "pair")
+  poolCount: BigInt!
+  # fees
+  fee: BigInt!
+  protocolFee: BigInt!
+  # Created at
+  timestamp: BigInt!
+  block: BigInt!
+}
+
+type LendingPairPool @entity {
+  # ${pairAdress}-${maturity}
+  id: ID!
+  maturity: BigInt!
+  pair: LendingPair!
+  # constant product
+  X: BigInt!
+  Y: BigInt!
+  Z: BigInt!
+  # reserves
+  assetReserve: BigInt!
+  collateralReserve: BigInt!
+  # natives
+  liquidityAddress: Bytes!
+  bondInterestAddress: Bytes!
+  bondPrincipalAddress: Bytes!
+  insuranceInterestAddress: Bytes!
+  insurancePrincipalAddress: Bytes!
+  collateralizedDebtAddress: Bytes!
+
+  borrowPositions: [CollateralizedDebtToken!] @derivedFrom(field: "pool")
+
+  # Created at
+  timestamp: BigInt!
+  block: BigInt!
+
+  farm: LPFarmPool
+}
+
+type LiquidityPosition @entity {
+  id: ID!
+  user: User!
+  pair: LendingPair!
+  liquidityTokenBalance: BigDecimal!
+}
+
+# only borrow CDTs are persisted
+type CollateralizedDebtToken @entity {
+  # {collateralizedDebtAddress}-{tokenId}
+  id: ID!
+  user: User!
+  pool: LendingPairPool!
+  # cdp NFT address
+  collateralizedDebtAddress: Bytes!
+  # nft id
+  tokenId: BigInt!
+}
+
+type User @entity {
+  id: ID!
+  liquidityPositions: [LiquidityPosition!] @derivedFrom(field: "user")
+  borrowPositions: [CollateralizedDebtToken!] @derivedFrom(field: "user")
+  usdSwapped: BigDecimal!
+  farmPositions: [LPFarmPosition!] @derivedFrom(field: "user")
+  stakedCreditAllocation: BigInt!
+}
+
+type Token @entity {
+  # token address
+  id: ID!
+
+  # mirrored from the smart contract
+  symbol: String!
+  name: String!
+  decimals: BigInt!
+
+  # used for other stats like marketcap
+  totalSupply: BigInt!
+
+  # token specific volume
+  tradeVolume: BigDecimal!
+  tradeVolumeUSD: BigDecimal!
+  untrackedVolumeUSD: BigDecimal!
+
+  # transactions across all pairs
+  txCount: BigInt!
+
+  # liquidity across all pairs
+  totalLiquidity: BigDecimal!
+
+  # derived prices
+  derivedETH: BigDecimal
+}
+
+# ===================LP FARMING===================
+
+type LPFarm @entity {
+  # Contract address
+  id: ID!
+
+  # Owner
+  owner: Bytes!
+
+  # Start block
+  startBlock: BigInt!
+
+  # Reward Token
+  token: Bytes!
+
+  # Emission Rate (Token per second)
+  emissionRate: BigInt!
+
+  # Total allocation point
+  totalAllocPoint: BigInt!
+
+  # Pools
+  pools: [LPFarmPool!]! @derivedFrom(field: "owner")
+
+  # LPFarmPool count
+  poolCount: BigInt!
+
+  # LPFarmHistory
+  LPFarmHistory: [LPFarmHistory!]! @derivedFrom(field: "owner")
+}
+
+type LPFarmHistory @entity {
+  # Master chef id concatenated with timestamp
+  id: ID!
+
+  # Owner (LPFarm, LPFarmPool, or FarmPositions).
+  owner: LPFarm!
+
+  # Timestamp
+  timestamp: BigInt!
+
+  # Block
+  block: BigInt!
+}
+
+type LPFarmPool @entity {
+  # Index of pool in poolInfo on MasterChef contract
+  id: ID!
+
+  # Owner
+  owner: LPFarm!
+
+  maturity: BigInt!
+
+  # Allocation point
+  allocPoint: BigInt!
+
+  # Last reward block
+  lastRewardTime: BigInt!
+
+  # Accumulated token per share
+  accTokenPerShare: BigInt!
+
+  # SLP token balance
+  balance: BigInt!
+
+  # LPFarmPool users
+  users: [LPFarmPosition!]! @derivedFrom(field: "pool")
+
+  # User count
+  positionCount: BigInt!
+
+  # Timestamp
+  timestamp: BigInt!
+
+  # Block
+  block: BigInt!
+
+  # Expired
+  hasExpired: Boolean!
+}
+
+type LPFarmPoolHistory @entity {
+  # LPFarmPool id concatenated with timestamp
+  id: ID!
+
+  # LPFarmPool
+  pool: LPFarmPool!
+
+  # User Count
+  positionCount: BigInt!
+
+  # Timestamp
+  timestamp: BigInt!
+
+  # Block
+  block: BigInt!
+}
+
+type LPFarmPosition @entity {
+  # LPFarmPool id concatenated with user address
+  id: ID!
+
+  creditPositionId: BigDecimal
+
+  # User address
+  user: User!
+
+  # Related pool
+  pool: LPFarmPool
+
+  # Amount
+  amount: BigInt!
+
+  # Reward debt
+  rewardDebt: BigInt!
+
+  # Tokens harvested
+  tokensHarvested: BigDecimal!
+
+  # Timestamp
+  timestamp: BigInt!
+
+  # Block
+  block: BigInt!
+}
+
+# ===================CREDIT STAKING===================
+
+type StakingData @entity {
+  id: ID!
+  distributedTokens: [Bytes!]!
+  dividendsInfo: [StakingDividendsInfo!]! @derivedFrom(field: "creditStaking")
+  users: [StakingUserInfo!]! @derivedFrom(field: "creditStaking")
+  creditToken: Bytes!
+  totalAllocation: BigInt!
+  cycleDurationSeconds: BigInt!
+  currentCycleStartTime: BigInt!
+  unstakingPenalties: [BigInt!]!
+  cycleStartBlocks: [BigInt!]!
+  lastDividendsUpdatedCycleStartBlock: BigInt!
+  epochNumber: BigInt!
+}
+
+type StakingDividendsInfo @entity {
+  id: ID!
+  creditStaking: StakingData!
+  token: Bytes!
+  currentDistributionAmount: BigInt!
+  currentCycleDistributedAmount: BigInt!
+  pendingAmount: BigInt!
+  distributedAmount: BigInt!
+  accDividendsPerShare: BigInt!
+  lastUpdateTime: BigInt!
+  distributionDisabled: Boolean!
+  lastUpdatedCycle: BigInt!
+}
+
+type StakingUserInfo @entity {
+  id: ID!
+  creditStaking: StakingData!
+  pendingDividends: BigInt!
+  rewardDebt: BigInt!
+}

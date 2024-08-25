@@ -1,0 +1,22 @@
+{
+  "network": "mainnet",
+  "lending_factory": {
+    "address": "0x5771c832D78fDf76A3DA918E4B7a49c062910639",
+    "startBlock": 95587678
+  },
+  "lp_farming": {
+    "address": "0xe97088840912617E83441e28405b802Cdaade2DD",
+    "startBlock": 95587678
+  },
+  "credit_staking": {
+    "address": "0x7484569310bc00d9B9603Ddda18d678F873Fa070",
+    "startBlock": 95587678
+  },
+  "distributor": {
+    "address": "0x0c7AD82b52Dc7f609B92bD32D1F8fbb7c0D124a7",
+    "startBlock": 95587678
+  },
+  "convenience_adress": "0xB88bedd28faA7f235995fb9325e996De4c803f40",
+  "weth_address": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+  "usdc_weth_address": "0x1e002Cb5D66c69172E432E2FC9d4264A51F3Da9B"
+}
